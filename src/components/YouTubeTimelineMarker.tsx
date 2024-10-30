@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import ReactSlider from 'react-slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Define YouTube IFrame API types
+// YouTube IFrame API types
 declare global {
   interface Window {
     YT: any;
@@ -20,106 +21,104 @@ interface TimelineData {
   timestamp: string;
 }
 
+interface YouTubePlayerState {
+  videoUrl: string;
+  videoId: string;
+  timelineData: TimelineData[];
+  currentRange: [number, number];
+  query: string;
+  videoDuration: number;
+  videoTitle: string;
+  currentTime: number;
+  isAPIReady: boolean;
+}
+
 const YouTubeTimelineMarker = () => {
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoId, setVideoId] = useState('');
-  const [timelineData, setTimelineData] = useState<TimelineData[]>([]);
-  const [currentRange, setCurrentRange] = useState([0, 100]);
-  const [query, setQuery] = useState('');
-  const [videoDuration, setVideoDuration] = useState(0);
-  const [videoTitle, setVideoTitle] = useState('');
+  const [state, setState] = useState<YouTubePlayerState>({
+    videoUrl: '',
+    videoId: '',
+    timelineData: [],
+    currentRange: [0, 100],
+    query: '',
+    videoDuration: 0,
+    videoTitle: '',
+    currentTime: 0,
+    isAPIReady: false
+  });
+
   const playerRef = useRef<YT.Player | null>(null);
   const intervalRef = useRef<number | null>(null);
-  const [isAPIReady, setIsAPIReady] = useState(false);
-  
+
   useEffect(() => {
-    // Initialize YouTube IFrame API
+    initYouTubeAPI();
+    return cleanupInterval;
+  }, []);
+
+  useEffect(() => {
+    if (state.isAPIReady && state.videoId) {
+      initializePlayer();
+    }
+  }, [state.videoId, state.isAPIReady]);
+
+  const initYouTubeAPI = () => {
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
-    // Setup player when API is ready
     window.onYouTubeIframeAPIReady = () => {
-      setIsAPIReady(true);
-      if (videoId) {
-        initializePlayer();
-      }
+      setState(prev => ({ ...prev, isAPIReady: true }));
     };
+  };
 
-    // Cleanup interval on unmount
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  // Add new useEffect to watch videoId changes
-  useEffect(() => {
-    if (isAPIReady && videoId) {
-      initializePlayer();
+  const cleanupInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
-  }, [videoId, isAPIReady]);
+  };
 
   const initializePlayer = () => {
-    if (!videoId) return;
+    if (!state.videoId) return;
     
     playerRef.current = new YT.Player('youtube-player', {
-      videoId: videoId,
+      videoId: state.videoId,
       height: '100%',
       width: '100%',
       events: {
-        onReady: (event) => {
-          const duration = event.target.getDuration();
-          const player = event.target as any;
-          setVideoTitle(player.getVideoData().title);
-          setVideoDuration(duration);
-          setCurrentRange([0, duration]);
-
-          // Log video information
-          console.group('YouTube Video Information');
-          console.log('Video Data:', player.getVideoData());
-          console.log('Player State:', player.getPlayerState());
-          console.log('Available Quality Levels:', player.getAvailableQualityLevels());
-          console.log('Current Time:', player.getCurrentTime());
-          console.log('Duration:', player.getDuration());
-          console.log('Video URL:', player.getVideoUrl());
-          console.log('Video Embed Code:', player.getVideoEmbedCode());
-          console.log('Video Loading Progress:', player.getVideoLoadedFraction());
-          console.log('Playback Quality:', player.getPlaybackQuality());
-          console.log('Playback Rate:', player.getPlaybackRate());
-          
-          try {
-            // These might not be available for all videos
-            console.log('Video Statistics:', player.getVideoStats());
-            console.log('Playlist:', player.getPlaylist());
-            console.log('Playlist Index:', player.getPlaylistIndex());
-          } catch (error) {
-            console.log('Additional data not available');
-          }
-          console.groupEnd();
-        },
-        onStateChange: (event) => {
-          if (event.data === YT.PlayerState.PLAYING) {
-            startTimeUpdate();
-          } else if (event.data === YT.PlayerState.PAUSED) {
-            stopTimeUpdate();
-            const currentTime = event.target.getCurrentTime();
-            setCurrentRange(prev => [currentTime, prev[1]]);
-          }
-        }
+        onReady: handlePlayerReady,
+        onStateChange: handlePlayerStateChange
       }
     });
   };
 
+  const handlePlayerReady = (event: any) => {
+    const duration = event.target.getDuration();
+    const player = event.target as any;
+    setState(prev => ({
+      ...prev,
+      videoTitle: player.getVideoData().title,
+      videoDuration: duration,
+      currentRange: [0, duration],
+      currentTime: 0
+    }));
+  };
+
+  const handlePlayerStateChange = (event: any) => {
+    if (event.data === YT.PlayerState.PLAYING) {
+      startTimeUpdate();
+    } else if (event.data === YT.PlayerState.PAUSED) {
+      stopTimeUpdate();
+      setState(prev => ({ ...prev, currentTime: event.target.getCurrentTime() }));
+    }
+  };
+
   const startTimeUpdate = () => {
-    stopTimeUpdate(); // Clear existing interval
+    stopTimeUpdate();
     
     intervalRef.current = window.setInterval(() => {
       if (playerRef.current) {
-        const currentTime = playerRef.current.getCurrentTime();
-        setCurrentRange(prev => [currentTime, prev[1]]);
+        const time = playerRef.current.getCurrentTime();
+        setState(prev => ({ ...prev, currentTime: time }));
       }
     }, 100);
   };
@@ -130,7 +129,7 @@ const YouTubeTimelineMarker = () => {
       intervalRef.current = null;
     }
   };
-  
+
   const extractVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -138,29 +137,32 @@ const YouTubeTimelineMarker = () => {
   };
 
   const handleUrlSubmit = () => {
-    const extractedId = extractVideoId(videoUrl);
+    const extractedId = extractVideoId(state.videoUrl);
     if (extractedId) {
-      setVideoId(extractedId);
+      setState(prev => ({ ...prev, videoId: extractedId }));
     } else {
       alert('Please enter a valid YouTube URL.');
     }
   };
 
   const handleAddTimelineData = () => {
-    if (query.trim() === '') {
+    if (state.query.trim() === '') {
       alert('Please enter a search term.');
       return;
     }
 
     const newData = {
-      query,
-      startTime: currentRange[0],
-      endTime: currentRange[1],
+      query: state.query,
+      startTime: state.currentRange[0],
+      endTime: state.currentRange[1],
       timestamp: new Date().toISOString()
     };
 
-    setTimelineData([...timelineData, newData]);
-    setQuery('');
+    setState(prev => ({
+      ...prev,
+      timelineData: [...prev.timelineData, newData],
+      query: ''
+    }));
   };
 
   const formatTime = (seconds: number) => {
@@ -169,22 +171,12 @@ const YouTubeTimelineMarker = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handleSliderChange = (newRange: number[]) => {
-    // Update both values from the slider
-    setCurrentRange(newRange);
-    
-    // Only seek video if start time changed
-    if (newRange[0] !== currentRange[0] && playerRef.current) {
-      playerRef.current.seekTo(newRange[0], true);
-    }
-  };
-
   const handleExport = () => {
     const exportData = {
-      videoUrl,
-      title: videoTitle,
-      duration: videoDuration,
-      timelineData
+      videoUrl: state.videoUrl,
+      title: state.videoTitle,
+      duration: state.videoDuration,
+      timelineData: state.timelineData
     };
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -198,6 +190,40 @@ const YouTubeTimelineMarker = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.classList.contains('timeline-bar')) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const newTime = (x / rect.width) * state.videoDuration;
+    setState(prev => ({ ...prev, currentTime: newTime }));
+    if (playerRef.current) {
+      playerRef.current.seekTo(newTime, true);
+    }
+  };
+
+  const handleTimelineMarkerDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const x = moveEvent.clientX - rect.left;
+      const percentage = Math.max(0, Math.min(1, x / rect.width));
+      const newTime = percentage * state.videoDuration;
+      setState(prev => ({ ...prev, currentTime: newTime }));
+      if (playerRef.current) {
+        playerRef.current.seekTo(newTime, true);
+      }
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <Card className="w-full max-w-6xl mx-auto">
       <CardHeader>
@@ -208,39 +234,73 @@ const YouTubeTimelineMarker = () => {
           <Input
             type="text"
             placeholder="Enter YouTube URL"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
+            value={state.videoUrl}
+            onChange={(e) => setState(prev => ({ ...prev, videoUrl: e.target.value }))}
             className="flex-1"
           />
           <Button onClick={handleUrlSubmit}>Load Video</Button>
         </div>
 
-        {videoId && (
+        {state.videoId && (
           <div className="aspect-video w-full">
             <div id="youtube-player"></div>
           </div>
         )}
-
-        <div className="space-y-2">
-          <p className="text-sm font-medium">
-            Time Range: {formatTime(currentRange[0])} - {formatTime(currentRange[1])}
-          </p>
-          <Slider
-            value={currentRange}
-            min={0}
-            max={videoDuration}
-            step={1}
-            className="w-full [&>.relative>.absolute]:bg-blue-500 [&_[role=slider]]:block [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:rounded-full [&_[role=slider]]:border [&_[role=slider]]:border-primary/50 [&_[role=slider]]:bg-background [&_[role=slider]]:shadow [&_[role=slider]]:transition-colors [&_[role=slider]]:focus-visible:outline-none [&_[role=slider]]:focus-visible:ring-1 [&_[role=slider]]:focus-visible:ring-ring [&_[role=slider]]:disabled:pointer-events-none [&_[role=slider]]:disabled:opacity-50"
-            onValueChange={handleSliderChange}
-          />
+        <div className="flex justify-end text-sm font-medium">
+          <span>{formatTime(state.videoDuration)}</span>
         </div>
 
-        <div className="flex gap-4">
+        <div className="relative h-4 mb-8">
+          <ReactSlider
+            className="timeline-bar absolute -translate-y-1/2 w-full"
+            thumbClassName="thumb"
+            trackClassName="track"
+            value={[state.currentRange[0], state.currentRange[1]]}
+            min={0}
+            max={state.videoDuration}
+            step={1}
+            onChange={(values: number[]) => {
+              setState(prev => ({ ...prev, currentRange: values as [number, number] }));
+            }}
+            renderThumb={(props, sliderState) => (
+              <div {...props} className="flex items-center">
+                {sliderState.index === 0 ? (
+                  <ChevronLeft className="w-4 h-4 text-blue-600" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-blue-600" />
+                )}
+                <div className="absolute -bottom-4 text-xs">
+                  {formatTime(state.currentRange[sliderState.index])}
+                </div>
+              </div>
+            )}
+          />
+          <div
+            className="absolute top-1/2 w-full h-[1px] bg-gray-600"
+            style={{
+              transform: 'translateY(-50%)',
+              zIndex: 10
+            }}
+          />
+          <div className="absolute flex flex-col items-center cursor-pointer"
+            style={{ 
+              left: `${(state.currentTime / state.videoDuration) * 100}%`,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 20
+            }}
+            onMouseDown={handleTimelineMarkerDrag}
+          >
+            <div className="text-xs">{formatTime(state.currentTime)}</div>
+            <div className="w-4 h-4 bg-red-600 rounded-full" />
+          </div>
+        </div>
+
+        <div className="flex gap-4 pt-4">
           <Input
             type="text"
             placeholder="Enter search term"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={state.query}
+            onChange={(e) => setState(prev => ({ ...prev, query: e.target.value }))}
             className="flex-1"
           />
           <Button onClick={handleAddTimelineData}>Add Timeline</Button>
@@ -248,7 +308,7 @@ const YouTubeTimelineMarker = () => {
         </div>
 
         <div className="space-y-2">
-          {timelineData.map((data, index) => (
+          {state.timelineData.map((data, index) => (
             <Alert key={index}>
               <AlertDescription>
                 Query: {data.query}
