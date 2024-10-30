@@ -1,9 +1,9 @@
 {
-  "name": "tl-youtube-timeline",
+  "name": "youtube-timeline",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://twlvelabs-io.github.io/youtube-timeline",
+  "homepage": "https://lukecha.github.io/youtube-timeline",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
