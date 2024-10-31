@@ -252,7 +252,7 @@ const YouTubeTimelineMarker = () => {
               setState(prev => ({ ...prev, currentRange: values as [number, number] }));
             }}
             renderThumb={(props, sliderState) => (
-              <div {...props} className="flex items-center">
+              <div {...props} className="flex items-center cursor-grab">
                 {sliderState.index === 0 ? (
                   <ChevronLeft className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
                 ) : (
