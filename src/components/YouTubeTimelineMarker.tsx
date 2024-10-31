@@ -52,10 +52,16 @@ const YouTubeTimelineMarker = () => {
 
   const playerRef = useRef<YT.Player | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     initYouTubeAPI();
-    return cleanupInterval;
+    return () => {
+      cleanupInterval();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -176,32 +182,35 @@ const YouTubeTimelineMarker = () => {
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.continuous = true;
-    recognition.interimResults = false;
-
-    recognition.onresult = (event: any) => {
-      console.log('onresult', event);
-      const transcript = event.results[0][0].transcript;
-      console.log(transcript);
-      setState(prev => ({ ...prev, query: transcript }));
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-    };
-
-    recognition.onend = () => {
-      console.log('Speech recognition ended.');
-      setState(prev => ({ ...prev, isRecording: false }));
-    };
-
     if (!state.isRecording) {
-      recognition.start();
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = false;
+
+      recognitionRef.current.onresult = (event: any) => {
+        console.log('onresult', event);
+        const transcript = event.results[0][0].transcript;
+        console.log(transcript);
+        setState(prev => ({ ...prev, query: transcript }));
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setState(prev => ({ ...prev, isRecording: false }));
+      };
+
+      recognitionRef.current.onend = () => {
+        console.log('Speech recognition ended.');
+        setState(prev => ({ ...prev, isRecording: false }));
+      };
+
+      recognitionRef.current.start();
       setState(prev => ({ ...prev, isRecording: true }));
     } else {
-      recognition.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setState(prev => ({ ...prev, isRecording: false }));
     }
   };
