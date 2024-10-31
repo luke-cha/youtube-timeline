@@ -4,13 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ReactSlider from 'react-slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Mic, Square } from 'lucide-react';
 
 // YouTube IFrame API types
 declare global {
   interface Window {
     YT: any;
     onYouTubeIframeAPIReady: () => void;
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
   }
 }
 
@@ -31,6 +33,7 @@ interface YouTubePlayerState {
   videoTitle: string;
   currentTime: number;
   isAPIReady: boolean;
+  isRecording: boolean;
 }
 
 const YouTubeTimelineMarker = () => {
@@ -43,7 +46,8 @@ const YouTubeTimelineMarker = () => {
     videoDuration: 0,
     videoTitle: '',
     currentTime: 0,
-    isAPIReady: false
+    isAPIReady: false,
+    isRecording: false
   });
 
   const playerRef = useRef<YT.Player | null>(null);
@@ -165,6 +169,43 @@ const YouTubeTimelineMarker = () => {
     }));
   };
 
+  const handleSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error('Speech recognition not supported in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event: any) => {
+      console.log('onresult', event);
+      const transcript = event.results[0][0].transcript;
+      console.log(transcript);
+      setState(prev => ({ ...prev, query: transcript }));
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+    };
+
+    recognition.onend = () => {
+      console.log('Speech recognition ended.');
+      setState(prev => ({ ...prev, isRecording: false }));
+    };
+
+    if (!state.isRecording) {
+      recognition.start();
+      setState(prev => ({ ...prev, isRecording: true }));
+    } else {
+      recognition.stop();
+      setState(prev => ({ ...prev, isRecording: false }));
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
@@ -251,18 +292,25 @@ const YouTubeTimelineMarker = () => {
             onChange={(values: number[]) => {
               setState(prev => ({ ...prev, currentRange: values as [number, number] }));
             }}
-            renderThumb={(props, sliderState) => (
-              <div {...props} className="flex items-center cursor-grab">
-                {sliderState.index === 0 ? (
-                  <ChevronLeft className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
-                ) : (
-                  <ChevronRight className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
-                )}
-                <div className="absolute -bottom-4 text-xs -translate-y-[12px]">
-                  {formatTime(state.currentRange[sliderState.index])}
+            renderThumb={(props, sliderState) => {
+              const { key, ...restProps } = props;
+              return (
+                <div 
+                  key={sliderState.index}
+                  {...restProps}
+                  className="flex items-center cursor-grab"
+                >
+                  {sliderState.index === 0 ? (
+                    <ChevronLeft className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
+                  ) : (
+                    <ChevronRight className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
+                  )}
+                  <div className="absolute -bottom-4 text-xs -translate-y-[12px]">
+                    {formatTime(state.currentRange[sliderState.index])}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            }}
           />
           <div
             className="absolute top-1/2 w-full h-[1px] bg-gray-600 flex justify-between"
@@ -288,6 +336,13 @@ const YouTubeTimelineMarker = () => {
         </div>
 
         <div className="flex gap-4 pt-4">
+          <Button onClick={handleSpeechRecognition}>
+            {state.isRecording ? (
+              <Square className="w-4 h-4 text-red-500" />
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
+          </Button>
           <Input
             type="text"
             placeholder="Enter search term"
