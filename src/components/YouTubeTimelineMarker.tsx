@@ -258,7 +258,7 @@ const YouTubeTimelineMarker = () => {
                 ) : (
                   <ChevronRight className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
                 )}
-                <div className="absolute -bottom-4 text-xs">
+                <div className="absolute -bottom-4 text-xs -translate-y-[12px]">
                   {formatTime(state.currentRange[sliderState.index])}
                 </div>
               </div>
@@ -271,8 +271,8 @@ const YouTubeTimelineMarker = () => {
               zIndex: 10
             }}
           >
-            <div className="w-[1px] h-4 bg-gray-600  -translate-y-[7px]" />
-            <div className="w-[1px] h-4 bg-gray-600  -translate-y-[7px]" />
+            <div className="w-[1px] h-4 bg-gray-600 -translate-y-[7px]" />
+            <div className="w-[1px] h-4 bg-gray-600 -translate-y-[7px]" />
           </div>
           <div className="absolute flex flex-col items-center cursor-pointer"
             style={{ 
@@ -282,7 +282,7 @@ const YouTubeTimelineMarker = () => {
             }}
             onMouseDown={handleTimelineMarkerDrag}
           >
-            <div className="text-xs">{formatTime(state.currentTime)}</div>
+            <div className="text-xs -translate-y-[7px]">{formatTime(state.currentTime)}</div>
             <div className="w-4 h-4 bg-red-600 rounded-full translate-y-[0.5px]" />
           </div>
         </div>
