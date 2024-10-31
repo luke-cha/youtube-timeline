@@ -283,7 +283,7 @@ const YouTubeTimelineMarker = () => {
             onMouseDown={handleTimelineMarkerDrag}
           >
             <div className="text-xs">{formatTime(state.currentTime)}</div>
-            <div className="w-4 h-4 bg-red-600 rounded-full" />
+            <div className="w-4 h-4 bg-red-600 rounded-full translate-y-[0.5px]" />
           </div>
         </div>
 
