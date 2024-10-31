@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import ReactSlider from 'react-slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronLeft, ChevronRight, Mic, Square } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // YouTube IFrame API types
 declare global {
@@ -34,6 +35,7 @@ interface YouTubePlayerState {
   currentTime: number;
   isAPIReady: boolean;
   isRecording: boolean;
+  language: string;
 }
 
 const YouTubeTimelineMarker = () => {
@@ -47,7 +49,8 @@ const YouTubeTimelineMarker = () => {
     videoTitle: '',
     currentTime: 0,
     isAPIReady: false,
-    isRecording: false
+    isRecording: false,
+    language: 'en-US'
   });
 
   const playerRef = useRef<YT.Player | null>(null);
@@ -184,7 +187,7 @@ const YouTubeTimelineMarker = () => {
 
     if (!state.isRecording) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.lang = state.language;
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = false;
 
@@ -265,8 +268,20 @@ const YouTubeTimelineMarker = () => {
 
   return (
     <Card className="w-full max-w-6xl mx-auto">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>YouTube Timeline Marker</CardTitle>
+        <Select 
+          value={state.language}
+          onValueChange={(value) => setState(prev => ({ ...prev, language: value }))}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select Language" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="en-US">English</SelectItem>
+            <SelectItem value="ko-KR">한국어</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex gap-4">
