@@ -190,17 +190,6 @@ const YouTubeTimelineMarker = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.classList.contains('timeline-bar')) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const newTime = (x / rect.width) * state.videoDuration;
-    setState(prev => ({ ...prev, currentTime: newTime }));
-    if (playerRef.current) {
-      playerRef.current.seekTo(newTime, true);
-    }
-  };
-
   const handleTimelineMarkerDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.parentElement?.getBoundingClientRect();
     if (!rect) return;
@@ -252,7 +241,7 @@ const YouTubeTimelineMarker = () => {
 
         <div className="relative h-4 mb-8">
           <ReactSlider
-            className="timeline-bar absolute -translate-y-1/2 w-full"
+            className="timeline-bar absolute -translate-y-1/2 w-[102.3%]" 
             thumbClassName="thumb"
             trackClassName="track"
             value={[state.currentRange[0], state.currentRange[1]]}
@@ -265,9 +254,9 @@ const YouTubeTimelineMarker = () => {
             renderThumb={(props, sliderState) => (
               <div {...props} className="flex items-center">
                 {sliderState.index === 0 ? (
-                  <ChevronLeft className="w-4 h-4 text-blue-600" />
+                  <ChevronLeft className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-blue-600" />
+                  <ChevronRight className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
                 )}
                 <div className="absolute -bottom-4 text-xs">
                   {formatTime(state.currentRange[sliderState.index])}
@@ -276,12 +265,15 @@ const YouTubeTimelineMarker = () => {
             )}
           />
           <div
-            className="absolute top-1/2 w-full h-[1px] bg-gray-600"
+            className="absolute top-1/2 w-full h-[1px] bg-gray-600 flex justify-between"
             style={{
               transform: 'translateY(-50%)',
               zIndex: 10
             }}
-          />
+          >
+            <div className="w-[1px] h-4 bg-gray-600  -translate-y-[7px]" />
+            <div className="w-[1px] h-4 bg-gray-600  -translate-y-[7px]" />
+          </div>
           <div className="absolute flex flex-col items-center cursor-pointer"
             style={{ 
               left: `${(state.currentTime / state.videoDuration) * 100}%`,
