@@ -39,3 +39,7 @@ This project is a YouTube Timeline Marker built with React and Vite. It allows u
 
 [YouTube Timeline Marker](http://luke-cha.github.io/youtube-timeline)
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
