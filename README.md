@@ -2,10 +2,9 @@
 
 This project is a YouTube Timeline Marker built with React and Vite. It allows users to mark specific timestamps on a YouTube video and add descriptive queries to those timestamps.
 
-## Screenshots
 
-![Main Interface](./docs/images/youtube-timeline-marker.gif)
-*Main interface of the YouTube Timeline Marker*
+## Demo
+![YouTube Timeline Marker Demo](https://github.com/luke-cha/youtube-timeline/blob/main/doc/images/youbute-timeline-marker.gif?raw=true)
 
 
 ## Features
