@@ -241,7 +241,7 @@ const YouTubeTimelineMarker = () => {
 
         <div className="relative h-4 mb-8">
           <ReactSlider
-            className="timeline-bar absolute -translate-y-1/2 w-[102.6%]" 
+            className="timeline-bar absolute -translate-y-1/2 w-[102.3%]" 
             thumbClassName="thumb"
             trackClassName="track"
             value={[state.currentRange[0], state.currentRange[1]]}
