@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ReactSlider from 'react-slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ChevronLeft, ChevronRight, Mic, Square } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Mic, Square, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // YouTube IFrame API types
@@ -295,6 +295,13 @@ const YouTubeTimelineMarker = () => {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleDeleteTimelineData = (index: number) => {
+    setState(prev => ({
+      ...prev,
+      timelineData: prev.timelineData.filter((_, i) => i !== index)
+    }));
+  };
+
   return (
     <Card className="w-full mx-auto">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -413,13 +420,17 @@ const YouTubeTimelineMarker = () => {
 
         <div className="space-y-2">
           {state.timelineData.map((data, index) => (
-            <Alert key={index}>
-              <AlertDescription>
-                Query: {data.query}
+            <div className="flex justify-between items-center">
+              <Alert key={index}>
+                <AlertDescription>
+                  Query: {data.query}
                 <br />
-                Time Range: {formatTime(data.startTime)} - {formatTime(data.endTime)}
-              </AlertDescription>
-            </Alert>
+                  Time Range: {formatTime(data.startTime)} - {formatTime(data.endTime)}
+                </AlertDescription>
+              
+              </Alert>
+              <X className="cursor-pointer" onClick={() => handleDeleteTimelineData(index)} />
+            </div>
           ))}
         </div>
       </CardContent>
