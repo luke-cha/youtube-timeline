@@ -243,6 +243,35 @@ const YouTubeTimelineMarker = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        if (!json.videoUrl || !json.timelineData) {
+          alert('Invalid JSON format.');
+          return;
+        }
+        setState(prev => ({
+          ...prev,
+          videoUrl: json.videoUrl,
+          videoId: extractVideoId(json.videoUrl) || '',
+          timelineData: json.timelineData,
+          videoTitle: json.title || '',
+          videoDuration: json.duration || 0,
+          currentRange: [0, json.duration || 0],
+          currentTime: 0
+        }));
+      } catch (error) {
+        alert('Invalid JSON format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleTimelineMarkerDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.parentElement?.getBoundingClientRect();
     if (!rect) return;
@@ -270,18 +299,23 @@ const YouTubeTimelineMarker = () => {
     <Card className="w-full mx-auto">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>YouTube Timeline Marker</CardTitle>
-        <Select 
-          value={state.language}
-          onValueChange={(value) => setState(prev => ({ ...prev, language: value }))}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select Language" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="en-US">English</SelectItem>
-            <SelectItem value="ko-KR">한국어</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4">
+          <Select 
+            value={state.language}
+            onValueChange={(value) => setState(prev => ({ ...prev, language: value }))}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en-US">English</SelectItem>
+              <SelectItem value="ko-KR">한국어</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => document.getElementById('fileInput')?.click()}>Import JSON</Button>
+          <input id="fileInput" type="file" accept="application/json" onChange={handleImport} style={{ display: 'none' }} />
+          <Button onClick={handleExport} variant="outline">Export JSON</Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex gap-4">
@@ -375,7 +409,6 @@ const YouTubeTimelineMarker = () => {
             className="flex-1"
           />
           <Button onClick={handleAddTimelineData}>Add Timeline</Button>
-          <Button onClick={handleExport} variant="outline">Export JSON</Button>
         </div>
 
         <div className="space-y-2">
