@@ -267,7 +267,7 @@ const YouTubeTimelineMarker = () => {
   };
 
   return (
-    <Card className="w-full max-w-6xl mx-auto">
+    <Card className="w-full mx-auto">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>YouTube Timeline Marker</CardTitle>
         <Select 
@@ -329,7 +329,7 @@ const YouTubeTimelineMarker = () => {
                   ) : (
                     <ChevronRight className="w-10 h-10 text-blue-600 -translate-y-[12px] -translate-x-3" />
                   )}
-                  <div className="absolute -bottom-4 text-xs -translate-y-[12px]">
+                  <div className={`absolute -bottom-4 text-xs ${sliderState.index === 0 ? '-translate-y-[12px]' : '-translate-y-[0px]'}`}>
                     {formatTime(state.currentRange[sliderState.index])}
                   </div>
                 </div>
