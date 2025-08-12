@@ -1,9 +1,16 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run tests against'
+        required: false
+        default: 'QA'
+        type: choice
+        options:
+          - QA
+          - DEV
 
 jobs:
   build-and-deploy:
@@ -12,26 +19,18 @@ jobs:
       contents: write
     
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Update Helm Values
+        uses: peter-evans/repository-dispatch@v3
         with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-        env:
-          BASE_PATH: '/${{ github.event.repository.name }}'
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: dist
-          clean: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: twelvelabs-io/tl-test-automation
+          event-type: e2e_tests_trigger
+          client-payload: |
+            {
+              "environment": "DEV",
+              "base_url": "https://playground-dev-git-fro-1750-redirect-to-feat-ca1532-twelve-labs.vercel.app",
+              "source_repo": "twelvelabs-io/tl-youtube-timeline",
+              "pr_number": "1693",
+              "workflow_run_id": "${{ github.run_id }}",
+              "triggered_by": "vercel_deployment"
+            }
